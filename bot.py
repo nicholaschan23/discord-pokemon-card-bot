@@ -7,45 +7,55 @@ from urllib.error import HTTPError
 import discord
 from discord import app_commands
 from discord.ext import commands
+from discord.ui import Select
 
 from pokemontcgsdk import RestClient, Card, Set, Rarity
 
 class DiscordBot(discord.Client):
-    all_names = []
+    # Set of all unqiue card names
+    card_names = []
+
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
         self.synced = False
 
         RestClient.configure(config.POKEMONTCG_IO_API_KEY)
-        self.fetch_all_names()
+        self.fetch_card_names()
+        # self.fetch_sets()
     
     async def on_ready(self):
         if (not self.synced):
-            await tree.sync(guild=discord.Object(id=config.SERVER_ID)) # Guild-specific syncing is instantenous, while global ~24 hours
+            # Instantenous guild-specific syncing
+            await tree.sync(guild=discord.Object(id=config.SERVER_ID))
             self.synced = True # Sync commands once
         print(f'{client.user} is now running.')
 
-    # Pre-processing all names
-    def fetch_all_names(self):        
-        if os.path.isfile('all_names.bin'):
+    # Pre-processing all card names
+    def fetch_card_names(self):
+        cards = [] # Card object
+        if os.path.isfile('cards.bin'):
             # Load cards from cached binary file if they exist
-            with open('all_names.bin', 'rb') as f:
-                all_names = pickle.load(f)
+            with open('cards.bin', 'rb') as f:
+                cards = pickle.load(f)
         else:
             # Get cards from the API if the cache file is missing
-            all_names = Card.where(q='name:"*"')
-            with open('all_names.bin', 'wb') as f:
+            cards = Card.all()
+            with open('card.bin', 'wb') as f:
                 # Store the cards
-                pickle.dump(all_names, f)
-        print(f'Processed {len(all_names)} cards')
+                pickle.dump(cards, f)
+        print(f'Processed {len(cards)} cards')
 
+        self.card_names = set([card.name for card in cards])
+        print(f'Processed {len(self.card_names)} unique card names')
+    
 client = DiscordBot()
-tree = app_commands.CommandTree(client) # Container for all slash commands
+# Container for all slash commands
+tree = app_commands.CommandTree(client)
 
-@tree.command(name='lookup', description='Search a Pokémon card on TCGPlayer', guild=discord.Object(id=config.SERVER_ID))
-async def self(interaction: discord.Interaction, name: str):
+@tree.command(name='lookup', description='Find a Pokémon card', guild=discord.Object(id=config.SERVER_ID))
+async def lookup(interaction: discord.Interaction, card_name: str):
     # LOOKUP
-    # Input Pokémon name from command parameter, suggested autofill of all valid card names when typing
+    # Input name from command parameter, suggested autofill of all valid card names when typing
 
 
     # Option: ask what set card is from suggested autofill of all valid set names when typing
@@ -71,7 +81,23 @@ async def self(interaction: discord.Interaction, name: str):
     # embedVar.add_field(name="Field2", value="hi2", inline=False)
     # await interaction.channel.send(embed=embedVar)
 
-    await interaction.channel.send('hi')
+    await interaction.response.send_message(f'{len(client.card_names)}')
+
+from typing import List
+@lookup.autocomplete('card_name')
+async def card_name_autocomplete(interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+    # choices = [
+    #     app_commands.Choice(name=choice, value=choice)
+    #     for choice in client.card_names if current.lower() in choice.lower()
+    # ]    
+    # return choices[:25] if (len(choices) > 25) else choices
+
+    choices = []
+    for choice in client.card_names:
+        if len(choices) == 25: break
+        if current.lower() in choice.lower():
+            choices.append(app_commands.Choice(name=choice, value=choice))     
+    return choices
 
 # @tree.command(name="remove", description="Remove card from watchlist", guild=discord.Object(id=SERVER_ID))
 # async def self(interaction: discord.Interaction):
