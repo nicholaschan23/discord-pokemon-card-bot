@@ -1,0 +1,32 @@
+import discord
+from discord.ext import menus
+from typing import Optional, List
+
+class LookupMenu(menus.Menu):
+    async def send_initial_message(self, ctx, channel):
+        return await channel.send(f'What card is the `{ctx}` you\'re looking for from?')
+
+    @menus.button('\N{THUMBS UP SIGN}')
+    async def on_thumbs_up(self):
+        await self.message.edit(content=f'Thanks {self.ctx.author}!')
+
+# class LookupMenu(discord.ui.View):
+#     def __init__(self, pages: list, timeout: float, user: Optional[discord.Member]=None):
+#         super().__init__(timeout=timeout)
+#         self.current_page = 0
+#         self.pages = pages
+#         self.user = user
+#         self.length = len(self.pages) - 1
+
+#     async def update(self, )
+
+#     @discord.ui.button(label="Send Message", style=discord.ButtonStyle.gray)
+#     async def menu1(self, button: discord.Button, interaction: discord.Interaction):
+#         await interaction.response.send_message("Hello")
+    
+#     @discord.ui.button(label="Edit Embed", style=discord.ButtonStyle.gray)
+#     async def menu2(self, button: discord.Button, interaction: discord.Interaction):
+#         embed = discord.Embed(title="Edited", color=0xffffff)
+#         await interaction.response.edit_message(embed=embed)
+#         # self.value = False
+#         # self.stop()

@@ -33,7 +33,6 @@ class DiscordBot(discord.Client):
             self.synced = True # Sync commands once
         print(f'{client.user} is now running.')
 
-    # Pre-process all card names
     def fetch_card_names(self):
         cards = [] # Card object
         if os.path.isfile('cards.bin'):
@@ -48,6 +47,7 @@ class DiscordBot(discord.Client):
                 pickle.dump(cards, f)
         print(f'Processed {len(cards)} cards')
 
+        # Pre-process all card names
         self.card_names = set([card.name for card in cards])
         print(f'Processed {len(self.card_names)} unique card names')
 
@@ -55,6 +55,7 @@ class DiscordBot(discord.Client):
         for card in cards:
             if card.set not in self.card_in_sets[card.name]:
                 self.card_in_sets[card.name].append(card.set)
+        print(f'Processed all sets card is in')
 
 client = DiscordBot()
 # Container for all slash commands
@@ -67,7 +68,8 @@ async def lookup(interaction: discord.Interaction, card_name: str):
     # Loop through all valid sets with card name
     # Skip button
     # skip = Button
-    
+
+        
     # Shows all results through embedded message
 
     # Load image
