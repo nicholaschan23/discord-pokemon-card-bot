@@ -7,13 +7,16 @@ from urllib.error import HTTPError
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Select
+from discord.ui import Select, Button
 
 from pokemontcgsdk import RestClient, Card, Set, Rarity
+
+from collections import defaultdict
 
 class DiscordBot(discord.Client):
     # Set of all unqiue card names
     card_names = []
+    card_in_sets = defaultdict(list)
 
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
@@ -30,7 +33,7 @@ class DiscordBot(discord.Client):
             self.synced = True # Sync commands once
         print(f'{client.user} is now running.')
 
-    # Pre-processing all card names
+    # Pre-process all card names
     def fetch_card_names(self):
         cards = [] # Card object
         if os.path.isfile('cards.bin'):
@@ -47,20 +50,23 @@ class DiscordBot(discord.Client):
 
         self.card_names = set([card.name for card in cards])
         print(f'Processed {len(self.card_names)} unique card names')
-    
+
+        # Pre-process all sets card is in
+        for card in cards:
+            if card.set not in self.card_in_sets[card.name]:
+                self.card_in_sets[card.name].append(card.set)
+
 client = DiscordBot()
 # Container for all slash commands
 tree = app_commands.CommandTree(client)
 
 @tree.command(name='lookup', description='Find a Pokémon card', guild=discord.Object(id=config.SERVER_ID))
+# Input name from command parameter, suggested autofill of all valid card names when typing
 async def lookup(interaction: discord.Interaction, card_name: str):
-    # LOOKUP
-    # Input name from command parameter, suggested autofill of all valid card names when typing
-
-
     # Option: ask what set card is from suggested autofill of all valid set names when typing
     # Loop through all valid sets with card name
     # Skip button
+    # skip = Button
     
     # Shows all results through embedded message
 
@@ -71,6 +77,7 @@ async def lookup(interaction: discord.Interaction, card_name: str):
         #     # url = card.images.small
         #     # urllib.request.urlretrieve(url, card.id + ".png")
 
+    # Find card using name and set
     # If multiple results, edit message to cycle through results via buttons
     
     # Added to watchlist button, or timeout message
@@ -79,9 +86,7 @@ async def lookup(interaction: discord.Interaction, card_name: str):
     # embedVar = discord.Embed(title="Title", description="Desc", color=0xb08f81)
     # embedVar.add_field(name="Field1", value="hi", inline=False)
     # embedVar.add_field(name="Field2", value="hi2", inline=False)
-    # await interaction.channel.send(embed=embedVar)
-
-    await interaction.response.send_message(f'{len(client.card_names)}')
+    await interaction.channel.send(card_name)
 
 from typing import List
 @lookup.autocomplete('card_name')
@@ -98,6 +103,8 @@ async def card_name_autocomplete(interaction: discord.Interaction, current: str)
         if current.lower() in choice.lower():
             choices.append(app_commands.Choice(name=choice, value=choice))     
     return choices
+
+    #autocomplete set name
 
 # @tree.command(name="remove", description="Remove card from watchlist", guild=discord.Object(id=SERVER_ID))
 # async def self(interaction: discord.Interaction):
@@ -116,22 +123,6 @@ async def card_name_autocomplete(interaction: discord.Interaction, current: str)
 @tree.command(name='ping', description='Get bot latency', guild=discord.Object(id=config.SERVER_ID))
 async def self(interaction: discord.Interaction):
     await interaction.response.send_message(f'{round(client.latency * 1000)}ms', ephemeral=True)
-
-# class CardEmbed(discord.ui.View):
-#     def __init__(self):
-#         super().__init__()
-#         self.value = None
-
-#     @discord.ui.button(label="Send Message", style=discord.ButtonStyle.gray)
-#     async def menu1(self, button: discord.Button, interaction: discord.Interaction):
-#         await interaction.response.send_message("Hello")
-    
-#     @discord.ui.button(label="Edit Embed", style=discord.ButtonStyle.gray)
-#     async def menu2(self, button: discord.Button, interaction: discord.Interaction):
-#         embed = discord.Embed(title="Edited", color=0xffffff)
-#         await interaction.response.edit_message(embed=embed)
-#         # self.value = False
-#         # self.stop()
 
 def run():
     client.run(config.TOKEN)
