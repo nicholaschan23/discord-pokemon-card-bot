@@ -13,6 +13,7 @@ class CardDatabase:
     card_to_set = defaultdict(list)
 
     def __init__(self):
+        print(f'Starting preprocesses...')
         self.fetch()
 
     def fetch(self):
@@ -30,11 +31,24 @@ class CardDatabase:
         print(f'Processed {len(cards)} cards')
 
         # Pre-process all card names
-        self.unique_names = set([card.name for card in cards])
+        if os.path.isfile('unique_names.bin'):
+            with open('unique_names.bin', 'rb') as f:
+                self.unique_names = pickle.load(f)
+        else:
+            self.unique_names = set([card.name for card in cards])
+            with open('unique_names.bin', 'wb') as f:
+                # Store the cards
+                pickle.dump(self.unique_names, f)
         print(f'Processed {len(self.unique_names)} unique card names')
 
         # Pre-process all sets card is in
-        for card in cards:
-            if card.set not in self.card_to_set[card.name]:
-                self.card_to_set[card.name].append(card.set)
-        print(f'Processed all sets card is in')
+        if os.path.isfile('card_to_set.bin'):
+            with open('card_to_set.bin', 'rb') as f:
+                self.card_to_set = pickle.load(f)
+        else:
+            for card in cards:
+                if card.set not in self.card_to_set[card.name]:
+                    self.card_to_set[card.name].append(card.set)
+            with open('unique_names.bin', 'wb') as f:
+                pickle.dump(self.card_to_set, f)
+        print(f'Processed all sets each unique card name is in')
